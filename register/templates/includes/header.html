@@ -1,0 +1,43 @@
+{% load static %}
+<nav class="navbar navbar-light" style="background-color: lightskyblue">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'homes:index' %}">
+            <span style="font-style: italic; color: red; font-size: 40px; blockquote;">short </span>URL
+        </a>
+
+    <ul>
+
+        <a href="{% url 'homes:index' %}">
+                    <li><button class="btn btn-warning">Главная страница</button></li>
+        </a>
+
+
+         {% with request.resolver_match.view_name as view_name %}
+
+             {% if request.user.is_authenticated %}
+
+               <a href="{% url 'users:logout' %}">
+                    <li><button class="btn btn-warning">Выйти</button></li>
+               </a>
+
+                <li>
+                    <br><p> Пользователь: {{ user.username }}</p>
+                </li>
+                {% else %}
+
+               <a class="nav-link {% if view_name  == 'users:login' %}active{% endif %}"
+                  href="{% url 'users:login' %}">
+                   <li><button class="btn btn-warning">Войти</button></li>
+               </a>
+
+               <a class="nav-link {% if view_name  == 'users:signup' %}active{% endif %}"
+                  href="{% url 'users:signup' %}">
+                   <li><button class="btn btn-warning">Регистрация</button></li>
+               </a>
+
+                {% endif %}
+           </ul>
+        {% endwith %}
+
+    </div>
+</nav>

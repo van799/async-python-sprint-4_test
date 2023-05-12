@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}
+Введите URL
+{% endblock %}
+{% block content %}
+
+<div class="container py-5">
+    <article>
+        <h3>Добавление URL</h3>
+        <form method="post" action="{% url 'homes:index' %}">
+            {% csrf_token %}
+            {{ add_url_form }}
+            <input type="submit" value="Добавить">
+        </form>
+
+        <div class="container py-5">
+            <article>
+                <hr>
+                <h3>URLs</h3>
+                <table>
+                    <tr>
+                        <th>origin url</th>
+                        <th>short url</th>
+                        <th>details</th>
+                    </tr>
+
+                    {% for data in url_list %}
+                    <tr>
+                        <td> <hr>{{ data }}</td>
+
+                    </tr>
+
+                    {% endfor %}
+                </table>
+                <hr>
+            </article>
+            </div>
+
+    </article>
+    </div>
+    <hr>
+    {% endblock content %}

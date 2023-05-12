@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container py-5">
+    <article>
+  <form method="post" action="{% url 'users:login' %}">
+      {% csrf_token %}
+       {{ form }}
+      <input type="submit" value="Войти">
+    </form>
+    </article>
+</div>
+
+ {% endblock content %}
+
