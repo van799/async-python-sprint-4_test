@@ -17,7 +17,12 @@ engine = create_engine(
 
 # создаем базовый класс для моделей
 class CommonBase(DeclarativeBase):
+    # def __init__(self):
+        # super().__init__()
+        # self.id = None
+        # self.deleted = False
     id = Column(Integer, primary_key=True, index=True)
+    deleted = Column(Boolean)
 
 
 # создаем модель, объекты которой будут храниться в бд
@@ -34,7 +39,6 @@ class UrlsPair(CommonBase):
     origin_url = Column(String, unique=True)
     hash_url = Column(String, unique=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    deleted = Column(Boolean)
     users = relationship('Users', back_populates='urls_pair')
     visits_id = Column(Integer, ForeignKey('visits.id'))
     visits = relationship("Visits", backref=backref("urls_pair", uselist=False))
@@ -47,4 +51,4 @@ class Visits(CommonBase):
     timestamp = Column(Time)
 
 
-Base.metadata.create_all(bind=engine)
+CommonBase.metadata.create_all(bind=engine)

@@ -1,21 +1,45 @@
 import os
 import unittest
+import os.path
 
-from short_link_api.models.models import engine
-from short_link_api.repository.user_repository import UserRepository
-from short_link_api.shared.test_get_model_base import GetUserModelBase
+from sqlalchemy import select, create_engine, insert
+from sqlalchemy.orm import Session
+
+from short_link_api.models.models import CommonBase
+from short_link_api.tests.common.models import TestCommon
+from short_link_api.tests.common.test_repository import TestRepository
 
 
-class TestUserRepository(unittest.TestCase):
+class TestRepositoryBase(unittest.TestCase):
 
     def setUp(self):
-        self.user_repository = UserRepository(engine)
-        GetUserModelBase.user_name = "TestUser"
-        self.object = GetUserModelBase
+        path = 'test_sql_app.db'
+        if os.path.exists(path):
+            os.remove(path)
 
-    def test_user_repository_add_and_get(self):
-        self.user_repository.add(self.object)
-        bd_data = self.user_repository.get()
-        path = 'sql_app.db'
-        os.remove(path)
-        self.assertEqual(bd_data[0].user_name, self.object.user_name)
+        SQLALCHEMY_DATABASE_URL = "sqlite:///./test_sql_app.db"
+
+        self.test_engine = create_engine(
+            SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+        )
+        CommonBase.metadata.create_all(bind=self.test_engine)
+
+        self.repository_base = TestRepository(self.test_engine)
+
+    def test_repository_add(self):
+        test_common = TestCommon()
+        self.repository_base.add(test_common)
+
+        with self.test_engine.connect() as con:
+            for row in con.execute(select(TestCommon)):
+                print(row)
+                a = 1
+
+            # row = session.query(TestCommon).all()
+            # for result in row:
+            #     print(result.id, result.deleted, result.test)
+
+        # results = session.execute(select(TestCommon))
+        # for result in results:
+        #     print(result.id)
+        # a = 1
