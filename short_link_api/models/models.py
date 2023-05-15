@@ -17,10 +17,6 @@ engine = create_engine(
 
 # создаем базовый класс для моделей
 class CommonBase(DeclarativeBase):
-    # def __init__(self):
-        # super().__init__()
-        # self.id = None
-        # self.deleted = False
     id = Column(Integer, primary_key=True, index=True)
     deleted = Column(Boolean)
 

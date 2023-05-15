@@ -28,18 +28,20 @@ class TestRepositoryBase(unittest.TestCase):
 
     def test_repository_add(self):
         test_common = TestCommon()
+        test_common.test_str = 'test'
+
+        self.repository_base.add(test_common)
+        with self.test_engine.connect() as con:
+            result = [row for row in con.execute(select(TestCommon))]
+
+        self.assertEqual(result[0][0], test_common.test_str)
+
+    def test_repository_get_all(self):
+        test_common = TestCommon()
+        test_common.test_str = 'test'
         self.repository_base.add(test_common)
 
+        self.repository_base.get_all()
         with self.test_engine.connect() as con:
-            for row in con.execute(select(TestCommon)):
-                print(row)
-                a = 1
-
-            # row = session.query(TestCommon).all()
-            # for result in row:
-            #     print(result.id, result.deleted, result.test)
-
-        # results = session.execute(select(TestCommon))
-        # for result in results:
-        #     print(result.id)
-        # a = 1
+            result = [row for row in con.execute(select(TestCommon))]
+        self.assertEqual(result[0][0], test_common.test_str)

@@ -1,6 +1,4 @@
-from tokenize import String
-
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, String
 
 from short_link_api.models.models import CommonBase
 
@@ -9,5 +7,4 @@ from short_link_api.models.models import CommonBase
 class TestCommon(CommonBase):
     __tablename__ = "test_common"
 
-    test = Column(Integer)
-
+    test_str = Column(String)

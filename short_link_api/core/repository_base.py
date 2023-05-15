@@ -14,9 +14,10 @@ class RepositoryBase(ABC):
         self.__repository_type = repository_type
 
     def add(self, model: CommonBase) -> None:
-        values = list(filter(lambda x: not x[0].startswith('_'), model.__dict__.items()))
-        self.__execute_statement(insert(self.__repository_type).values(values))
-        a = 1
+        key_ = [x for x in model.__dict__ if x.startswith('_')]
+        clear_dict = model.__dict__.copy()
+        clear_dict.pop(key_[0])
+        self.__execute_statement(insert(self.__repository_type).values(clear_dict))
 
     def get_all(self) -> Result[Any]:
         return self.__execute_statement(select(self.__repository_type))
