@@ -37,11 +37,12 @@ class RepositoryBase(ABC):
             update(self.__repository_type).where(where_clause).values(deleted=True)
         )
 
-    def __execute_statement(self, statement: Any) -> Result[Any]:
-        with self.__get_connection() as connection:
-            result = connection.execute(statement)
+    def __execute_statement(self, statement: Any) -> list[Any]:
+        with self.__get_session() as session:
+            result = session.execute(statement).scalars().all()
+
             if statement is not Select:
-                connection.commit()
+                session.commit()
             return result
 
     def __get_connection(self) -> Connection:

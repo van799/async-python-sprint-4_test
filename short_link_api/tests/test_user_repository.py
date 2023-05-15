@@ -38,25 +38,40 @@ class TestRepositoryBase(unittest.TestCase):
 
     def test_repository_get_all(self):
         test_common = TestCommon()
-        values = [{'test_str': 'test1'}, {'test_str': 'test2'}, {'test_str': 'test3'}]
+
+        values = [
+            TestCommon(id=1, deleted=False, test_str='test'),
+            TestCommon(id=2, deleted=False, test_str='test'),
+            TestCommon(id=3, deleted=False, test_str='test')
+        ]
+
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                  {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                  {'id': 3, 'deleted': False, 'test_str': 'test3'}]
 
         with Session(autoflush=False, bind=self.test_engine) as session:
-            session.execute(insert(TestCommon).values(values))
+            session.execute(insert(TestCommon).values(values_dict))
             session.commit()
 
-        with Session(autoflush=False, bind=self.test_engine) as session:
-            result = session.execute(select(TestCommon))
-            for row in result:
-                print(row[0].id)
-
-        result_dict = [{'id': row[0].id}]
+        # with Session(autoflush=False, bind=self.test_engine) as session:
+        #     result = session.execute(select(TestCommon))
+        #     result_list = []
+        #     for row in result:
+        #         result_dict = dict(filter(lambda x: not x[0].startswith('_'), row[0].__dict__.items()))
+        #         result_list.append(result_dict)
 
         result = self.repository_base.get_all()
-        # l = list(result)
-        result = [row for row in result]
+        for row in result:
+            print(row.id)
+        # result_list = []
+        # for row in result:
+        #     result_dict = dict(row)
+        # # result_dict = dict(filter(lambda x: not x[0].startswith('_'), row.__dict__.items()))
+        # result_list.append(result_dict)
 
-        print(result)
-        self.assertEqual(result[0][0], test_common.test_str)
+        self.assertEqual(result[0].id, 1)
+        self.assertEqual(result[1].id, 2)
+        self.assertEqual(result[2].id, 3)
 
     def test_repository_get_by_id(self):
         test_common = TestCommon()
