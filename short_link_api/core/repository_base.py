@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy import Engine, select, Result, update, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import Select
+from sqlalchemy.engine.base import Connection
 
 from short_link_api.models.models import CommonBase
 
@@ -14,10 +15,8 @@ class RepositoryBase(ABC):
         self.__repository_type = repository_type
 
     def add(self, model: CommonBase) -> None:
-        key_ = [x for x in model.__dict__ if x.startswith('_')]
-        clear_dict = model.__dict__.copy()
-        clear_dict.pop(key_[0])
-        self.__execute_statement(insert(self.__repository_type).values(clear_dict))
+        values = dict(filter(lambda x: not x[0].startswith('_'), model.__dict__.items()))
+        self.__execute_statement(insert(self.__repository_type).values(values))
 
     def get_all(self) -> Result[Any]:
         return self.__execute_statement(select(self.__repository_type))
@@ -39,12 +38,14 @@ class RepositoryBase(ABC):
         )
 
     def __execute_statement(self, statement: Any) -> Result[Any]:
-        with self.__get_session() as session:
-            result = session.execute(statement)
-            s = str(statement)
+        with self.__get_connection() as connection:
+            result = connection.execute(statement)
             if statement is not Select:
-                session.commit()
+                connection.commit()
             return result
+
+    def __get_connection(self) -> Connection:
+        return self._engine.connect()
 
     def __get_session(self) -> Session:
         return Session(autoflush=False, bind=self._engine)
