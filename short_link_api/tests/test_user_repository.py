@@ -1,44 +1,38 @@
+import asyncio
 import os
 import unittest
 import os.path
 
-from sqlalchemy import select, create_engine, insert
-from sqlalchemy.orm import Session
+from sqlalchemy import select, create_engine, insert, Select, func
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from sqlalchemy.orm import Session, sessionmaker, aliased
 
 from short_link_api.models.models import CommonBase
+from short_link_api.tests.common.common_test_base_init import TestDatabase
 from short_link_api.tests.common.models import TestCommon
 from short_link_api.tests.common.test_repository import TestRepository
 
 
-class TestRepositoryBase(unittest.TestCase):
+class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
 
-    def setUp(self):
-        path = 'test_sql_app.db'
-        if os.path.exists(path):
-            os.remove(path)
-
-        SQLALCHEMY_DATABASE_URL = "sqlite:///./test_sql_app.db"
-
-        self.test_engine = create_engine(
-            SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-        )
-        CommonBase.metadata.create_all(bind=self.test_engine)
-
-        self.repository_base = TestRepository(self.test_engine)
-
-    def test_repository_add(self):
+    async def test_repository_add(self):
+        test_database = TestDatabase()
         test_common = TestCommon()
         test_common.test_str = 'test'
 
-        self.repository_base.add(test_common)
-        with self.test_engine.connect() as con:
-            result = [row for row in con.execute(select(TestCommon))]
+        async with await test_database.create_session() as session:
+            repository = TestRepository(session)
+            await repository.add(test_common)
 
-        self.assertEqual(result[0][0], test_common.test_str)
+        async with test_database.get_engine().begin() as conn:
+            await repository.add(test_common)
+            result = [row for row in await conn.execute(select(TestCommon))]
 
-    def test_repository_get_all(self):
-        test_common = TestCommon()
+            self.assertEqual(result[0][0], test_common.test_str)
+        test_database.dispose()
 
+    async def test_repository_get_all(self):
         values = [
             TestCommon(id=1, deleted=False, test_str='test'),
             TestCommon(id=2, deleted=False, test_str='test'),
@@ -46,39 +40,146 @@ class TestRepositoryBase(unittest.TestCase):
         ]
 
         values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
-                  {'id': 2, 'deleted': False, 'test_str': 'test2'},
-                  {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
 
-        with Session(autoflush=False, bind=self.test_engine) as session:
-            session.execute(insert(TestCommon).values(values_dict))
-            session.commit()
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
 
-        # with Session(autoflush=False, bind=self.test_engine) as session:
-        #     result = session.execute(select(TestCommon))
-        #     result_list = []
-        #     for row in result:
-        #         result_dict = dict(filter(lambda x: not x[0].startswith('_'), row[0].__dict__.items()))
-        #         result_list.append(result_dict)
+        async with get_session() as session:
+            repository = TestRepository(session)
 
-        result = self.repository_base.get_all()
-        for row in result:
-            print(row.id)
-        # result_list = []
-        # for row in result:
-        #     result_dict = dict(row)
-        # # result_dict = dict(filter(lambda x: not x[0].startswith('_'), row.__dict__.items()))
-        # result_list.append(result_dict)
+            result = await repository.get_all()
 
         self.assertEqual(result[0].id, 1)
         self.assertEqual(result[1].id, 2)
         self.assertEqual(result[2].id, 3)
 
-    def test_repository_get_by_id(self):
-        test_common = TestCommon()
-        test_common.test_str = 'test'
-        self.repository_base.add(test_common)
+    async def test_repository_get_by_id(self):
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
 
-        id = 1
-        result = self.repository_base.get_by_id(id)
-        result = [row for row in result]
-        print(result)
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+
+            result = await repository.get_by_id(1)
+
+        self.assertEqual(result.id, 1)
+
+    async def test_repository_delete_by_id(self):
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+            await repository.delete_by_id(1)
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+            result = await repository.get_by_id(1)
+
+        self.assertEqual(len(result), 0)
+
+    async def test_repository_get_all_does_not_return_deleted_objects(self):
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': True, 'test_str': 'test3'}]
+
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+
+            result = await repository.get_all()
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0].id, 1)
+        self.assertEqual(result[1].id, 2)
+
+    async def test_repository_count(self):
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+            result = await repository.count()
+
+        self.assertEqual(result, 3)
+
+    async def test_repository_execute_statement_scalars(self):
+        values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+                       {'id': 2, 'deleted': False, 'test_str': 'test2'},
+                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+
+        async with test_engine.begin() as conn:
+            await conn.execute(insert(TestCommon).values(values_dict))
+            await conn.commit()
+
+        async with get_session() as session:
+            repository = TestRepository(session)
+            statement = Select(TestCommon).where(TestCommon.test_str == "test2")
+            result = await repository._execute_statement_scalars(statement)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].test_str, "test2")
+
+    # async def test_repository_execute_statement_scalar(self):
+    #     values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+    #                    {'id': 2, 'deleted': False, 'test_str': 'test2'},
+    #                    {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+    #
+    #     async with test_engine.begin() as conn:
+    #         await conn.execute(insert(TestCommon).values(values_dict))
+    #         await conn.commit()
+    #
+    #     async with get_session() as session:
+    #         repository = TestRepository(session)
+    #         statement = select(func.count()).select_from(select(repository._get_subquery()).where(repository._get_subquery().test_str == "test2"))
+    #         print(statement)
+    #         result = await repository._execute_statement_scalar(statement)
+    #
+    #     self.assertEqual(result, 1)
+
+    # async def test_repository_alias_approach(self):
+    #     values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
+    #                    {'id': 2, 'deleted': False, 'test_str': 'test2'},
+    #                    {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+    #
+    #     async with test_engine.begin() as conn:
+    #         await conn.execute(insert(TestCommon).values(values_dict))
+    #         await conn.commit()
+    #
+    #     async with get_session() as session:
+    #         repository = TestRepository(session)
+    #
+    #         base_statement = select(TestCommon).where(TestCommon.deleted == False)
+    #         base_alias = aliased(TestCommon, base_statement.subquery())
+    #         statement = select(base_alias).where(base_alias.id == 1)
+    #         result = (await session.execute(statement)).scalars().all()
+    #         print(result)
+    #         statement = select(func.count()).select_from(base_alias).where(base_alias.test_str == "test2")
+    #         result = (await session.execute(statement)).scalar()
+    #         print(result)
+    #         # statement = select(func.count()).select_from(TestCommon)
+    #         # print(statement)
+    #         # result = await repository._execute_statement_scalar(statement)
+    #
+    #     self.assertEqual(result, 1)
