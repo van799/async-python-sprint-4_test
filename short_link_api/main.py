@@ -1,40 +1,18 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 
-from short_link_api.models.models import engine
-from short_link_api.repository.urls_repository import UrlsRepository
-from short_link_api.shared.model.get_model_base import UrlsModelBase
-
-app = FastAPI()
+from short_link_api.api.v1.entity import router
 
 
-@app.get("/{user}")
-def user_urls(user):
-    dict1 = {
-        'origin_url': 'youtebe.com',
-        'short_url': 'dadadadadaa1',
-    }
+app = FastAPI(
+    title="Заголовок",
+    docs_url='/api/openapi',
+    openapi_url='/api/openapi.json',
+    default_response_class=ORJSONResponse,
+)
 
-    dict2 = {
-        'origin_url': 'ya.com',
-        'short_url': "lalallaalaal2",
-    }
-
-    origin_list = [dict1, dict2]
-
-    return origin_list
-
-
-@app.post("/")
-def add_urls(data: UrlsModelBase):
-    urls_repository = UrlsRepository(engine)
-    urls_repository.add(data)
-
-
-@app.get("/")
-def get_urls():
-    urls_repository = UrlsRepository(engine)
-    urls_repository.get()
+app.include_router(router, prefix='/api/v1')
 
 
 """Запуск сервера"""

@@ -1,19 +1,6 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Time
-from sqlalchemy.orm import Session
 
-from fastapi import FastAPI
 from sqlalchemy.orm import relationship, backref, sessionmaker, DeclarativeBase
-
-# строка подключения
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./sql_app.db"
-
-# создаем движок SqlAlchemy
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
 
 
 # создаем базовый класс для моделей
