@@ -1,3 +1,5 @@
+from sqlalchemy import select
+
 from short_link_api.core.repository_base import RepositoryBase
 from short_link_api.models.models import Users
 
@@ -7,3 +9,7 @@ class UserRepository(RepositoryBase):
 
     def __init__(self, engine):
         super().__init__(engine, Users)
+
+    async def get_user_by_name(self, user_name: str) -> list:
+        return (await self._execute_statement(
+            select(self._get_subquery()).where(self._get_subquery().user_name == user_name))).scalar_one_or_none()

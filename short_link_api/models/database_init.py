@@ -1,3 +1,4 @@
+import asyncio
 import os
 import os.path
 import time
@@ -18,6 +19,7 @@ class Database:
         self.async_session = sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
+        asyncio.run(self.metadate_create_all())
 
     async def create_session(self):
         await self.metadate_create_all()
