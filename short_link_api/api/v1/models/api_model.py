@@ -14,6 +14,15 @@ class ResponseShortUrlBaseModel(BaseModel):
     short_url: str
 
 
+class RequestDeleteUrlBaseModel(BaseModel):
+    origin_url: str
+    user_name: str
+
+
+class ResponseDeleteUrlBaseModel(BaseModel):
+    message: str
+
+
 class ResponseFullUrlBaseModel(BaseModel):
     origin_url: str
 
@@ -21,4 +30,3 @@ class ResponseFullUrlBaseModel(BaseModel):
 class VisitsBaseModel(BaseModel):
     visit_call: str
     timestamp: str
-

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from short_link_api.api.v1.models.api_model import RequestShortUrlBaseModel, \
-    ResponseShortUrlBaseModel, ResponseFullUrlBaseModel
+    ResponseShortUrlBaseModel, ResponseFullUrlBaseModel, RequestDeleteUrlBaseModel, ResponseDeleteUrlBaseModel
 from short_link_api.models.database_init import Database
 from short_link_api.models.models import Users, UrlsPair
 from short_link_api.repository.urls_repository import UrlsRepository
@@ -72,6 +72,27 @@ async def get_url(*,
     else:
         result = url.origin_url
     return ResponseFullUrlBaseModel(origin_url=result)
+
+
+@router.post("/delete")
+async def delete_url(*,
+                     session: AsyncSession = Depends(database.get_session),
+                     request: RequestDeleteUrlBaseModel
+                     ) -> Any:
+    user_repository = UserRepository(session)
+    urls_repository = UrlsRepository(session)
+
+    find_user = await user_repository.get_user_by_name(request.user_name)
+    find_url = await urls_repository.get_hash_by_url(request.origin_url)
+
+    if find_user is None:
+        user_message = "Удалить может только пользователь"
+        return ResponseDeleteUrlBaseModel(message=user_message)
+    if find_url is None:
+        url_message = "Неверный URL"
+        return ResponseDeleteUrlBaseModel(message=url_message)
+    await urls_repository.delete_by_id(find_url.id)
+    return ResponseShortUrlBaseModel(short_url="URL Удален")
 
 # Список возможных эндпойнтов (можно изменять)
 #
