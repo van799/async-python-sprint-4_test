@@ -14,6 +14,10 @@ class ResponseShortUrlBaseModel(BaseModel):
     short_url: str
 
 
+class ResponseFullUrlBaseModel(BaseModel):
+    origin_url: str
+
+
 class VisitsBaseModel(BaseModel):
     visit_call: str
     timestamp: str

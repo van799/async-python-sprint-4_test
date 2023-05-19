@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from short_link_api.api.v1.models.api_model import RequestShortUrlBaseModel, \
-    ResponseShortUrlBaseModel
+    ResponseShortUrlBaseModel, ResponseFullUrlBaseModel
 from short_link_api.models.database_init import Database
 from short_link_api.models.models import Users, UrlsPair
 from short_link_api.repository.urls_repository import UrlsRepository
@@ -16,9 +16,9 @@ router = APIRouter()
 
 @router.post("/")
 async def create_url(*,
-               session: AsyncSession = Depends(database.get_session),
-               request: RequestShortUrlBaseModel
-               ) -> Any:
+                     session: AsyncSession = Depends(database.get_session),
+                     request: RequestShortUrlBaseModel
+                     ) -> Any:
     user_repository = UserRepository(session)
     urls_repository = UrlsRepository(session)
     url = UrlsPair()
@@ -41,11 +41,17 @@ async def create_url(*,
 
 
 @router.get("/{shorten_url_id}")
-def get_url(*,
-            session: AsyncSession = Depends(database.get_session),
-            shorten_url_id: str
-            ) -> Any:
-    return {"test": "test"}
+async def get_url(*,
+                  session: AsyncSession = Depends(database.get_session),
+                  shorten_url_id: str
+                  ) -> Any:
+    urls_repository = UrlsRepository(session)
+    url = await urls_repository.get_url_by_hash(shorten_url_id)
+    if url is None:
+        result = "URL не найден"
+    else:
+        result = url.origin_url
+    return ResponseFullUrlBaseModel(origin_url=result)
 
 # Список возможных эндпойнтов (можно изменять)
 #
