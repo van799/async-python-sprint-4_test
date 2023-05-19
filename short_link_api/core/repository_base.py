@@ -20,11 +20,14 @@ class RepositoryBase(ABC):
         await self._execute_statement(insert(self.__repository_type).values(values))
 
     async def get_all(self) -> list:
-        return (await self._execute_statement(select(self._get_subquery()))).scalars().all()
+        return (await self._execute_statement(
+            select(self._get_subquery()).filter(self._get_subquery().deleted == False))).scalars().all()
 
     async def get_by_id(self, model_id: int) -> list:
         return (await self._execute_statement(
-            select(self._get_subquery()).where(self._get_subquery().id == model_id))).scalar()
+            select(
+                self._get_subquery()).filter(self._get_subquery().id == model_id).filter(
+                self._get_subquery().deleted == False))).scalar()
 
     async def delete_by_id(self, model_id: int) -> None:
         await self._execute_statement(
@@ -33,25 +36,24 @@ class RepositoryBase(ABC):
 
     async def count(self):
         return (await self._execute_statement(
-            select(func.count()).select_from(self._get_subquery()))).scalar()
+            select(func.count()).select_from(self._get_subquery()).filter(
+                self._get_subquery().deleted == False))).scalar()
 
     async def _execute_statement(self, statement: Any) -> list[Any]:
-      #  print(statement)
+        #  print(statement)
         if type(statement) is Select:
             result = await self.__session.execute(statement)
             return result
 
         result = await self.__session.execute(statement)
-        #print(statement)
+        # print(statement)
         if type(statement) is not Select:
             await self.__session.commit()
             return []
         return result
 
     def _get_subquery(self):
-        base_statement = select(self.__repository_type).where(self.__repository_type.deleted == False)
-        subquery = aliased(self.__repository_type, base_statement.subquery())
-        return subquery
+        return self.__repository_type
 
     async def _execute_statement_scalars(self, statement: Any) -> list[Any]:
         return (await self._execute_statement(statement)).scalars().all()

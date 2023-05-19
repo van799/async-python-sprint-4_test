@@ -23,20 +23,6 @@ class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
             {'id': 3, 'origin_url': 'youtube.com', 'hash_url': 'wfarg', 'user_id': 3},
         ]
 
-    #     user_name = Column(String, unique=True)
-    #     urls_pair = relationship("UrlsPair", back_populates="users")
-    #
-    #     __tablename__ = "urls_pair"
-    #
-    #     origin_url = Column(String, unique=True)
-    #     hash_url = Column(String, unique=True)
-    #     user_id = Column(Integer, ForeignKey("users.id"))
-    #     users = relationship('Users', back_populates='urls_pair')
-    #     visits_id = Column(Integer, ForeignKey('visits.id'), default=None)
-    #     visits = relationship("Visits", backref=backref("urls_pair", uselist=False))
-
-
-
         await test_database.create_session()
 
         async with test_database.get_engine().begin() as conn:

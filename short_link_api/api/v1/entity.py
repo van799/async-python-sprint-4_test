@@ -14,6 +14,21 @@ database = Database()
 router = APIRouter()
 
 
+@router.get('/ping', tags=['main'])
+async def ping_db(
+        db: AsyncSession = Depends(database.get_session)) -> Any:
+    """
+    Check DB connection status
+    """
+    try:
+        await db.connection()
+        connection_status = True
+    except Exception:
+        connection_status = False
+
+    return {'Connected': connection_status}
+
+
 @router.post("/")
 async def create_url(*,
                      session: AsyncSession = Depends(database.get_session),
@@ -24,6 +39,7 @@ async def create_url(*,
     url = UrlsPair()
 
     find_user = await user_repository.get_user_by_name(request.user_name)
+    find_url = await urls_repository.get_hash_by_url(request.origin_url)
 
     if find_user is None:
         user = Users()
@@ -35,9 +51,13 @@ async def create_url(*,
 
     url.origin_url = request.origin_url
     url.hash_url = hash(request.origin_url)
-    await urls_repository.add(url)
+    if find_url is None:
+        await urls_repository.add(url)
+        result = url.hash_url
+    else:
+        result = (await urls_repository.get_hash_by_url(request.origin_url)).hash_url
 
-    return ResponseShortUrlBaseModel(short_url=url.hash_url)
+    return ResponseShortUrlBaseModel(short_url=result)
 
 
 @router.get("/{shorten_url_id}")

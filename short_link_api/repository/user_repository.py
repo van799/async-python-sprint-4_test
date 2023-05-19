@@ -12,4 +12,6 @@ class UserRepository(RepositoryBase):
 
     async def get_user_by_name(self, user_name: str) -> list:
         return (await self._execute_statement(
-            select(self._get_subquery()).where(self._get_subquery().user_name == user_name))).scalar_one_or_none()
+            select(
+                self._get_subquery()).filter(self._get_subquery().user_name == user_name).filter(
+                self._get_subquery().deleted == False))).scalar_one_or_none()
