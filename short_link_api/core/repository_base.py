@@ -20,14 +20,11 @@ class RepositoryBase(ABC):
         await self._execute_statement(insert(self.__repository_type).values(values))
 
     async def get_all(self) -> list:
-        return (await self._execute_statement(
-            select(self._get_subquery()).filter(self._get_subquery().deleted == False))).scalars().all()
+        return (await self._execute_statement(self._get_subquery())).scalars().all()
 
     async def get_by_id(self, model_id: int) -> list:
         return (await self._execute_statement(
-            select(
-                self._get_subquery()).filter(self._get_subquery().id == model_id).filter(
-                self._get_subquery().deleted == False))).scalar()
+            self._get_subquery().filter(self.__repository_type.id == model_id))).scalar()
 
     async def delete_by_id(self, model_id: int) -> None:
         await self._execute_statement(
@@ -36,8 +33,7 @@ class RepositoryBase(ABC):
 
     async def count(self):
         return (await self._execute_statement(
-            select(func.count()).select_from(self._get_subquery()).filter(
-                self._get_subquery().deleted == False))).scalar()
+            select(func.count()).select_from(self._get_subquery().subquery('t1')))).scalar()
 
     async def _execute_statement(self, statement: Any) -> list[Any]:
         #  print(statement)
@@ -52,8 +48,11 @@ class RepositoryBase(ABC):
             return []
         return result
 
+        # def _get_subquery(self):
+        #     return self.__repository_type
+
     def _get_subquery(self):
-        return self.__repository_type
+        return select(self.__repository_type).filter(self.__repository_type.deleted == False)
 
     async def _execute_statement_scalars(self, statement: Any) -> list[Any]:
         return (await self._execute_statement(statement)).scalars().all()

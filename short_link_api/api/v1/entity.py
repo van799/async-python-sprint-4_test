@@ -14,7 +14,7 @@ database = Database()
 router = APIRouter()
 
 
-@router.get('/ping', tags=['main'])
+@router.get('/ping')
 async def ping_db(
         db: AsyncSession = Depends(database.get_session)) -> Any:
     """

@@ -63,10 +63,10 @@ class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
         async with await test_database.create_session() as session:
             repository = TestRepository(session)
 
-            result = await repository.get_by_id(1)
+            result = await repository.get_by_id(2)
 
         test_database.dispose()
-        self.assertEqual(result.id, 1)
+        self.assertEqual(result.id, 2)
 
     async def test_repository_delete_by_id(self):
         test_database = TestDatabase()
@@ -120,7 +120,7 @@ class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
 
         values_dict = [{'id': 1, 'deleted': False, 'test_str': 'test1'},
                        {'id': 2, 'deleted': False, 'test_str': 'test2'},
-                       {'id': 3, 'deleted': False, 'test_str': 'test3'}]
+                       {'id': 3, 'deleted': True, 'test_str': 'test3'}]
 
         await test_database.create_session()
 
@@ -133,7 +133,7 @@ class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
             result = await repository.count()
 
         test_database.dispose()
-        self.assertEqual(result, 3)
+        self.assertEqual(result, 2)
 
     async def test_repository_execute_statement_scalars(self):
         test_database = TestDatabase()
