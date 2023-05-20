@@ -17,3 +17,7 @@ class UrlsRepository(RepositoryBase):
     async def get_hash_by_url(self, url: str) -> list:
         return (await self._execute_statement(
             self._get_subquery().filter(UrlsPair.origin_url == url))).scalar_one_or_none()
+
+    async def get_url_by_user_id(self, id: str) -> list:
+        return (await self._execute_statement(
+            self._get_subquery().filter(UrlsPair.user_id == id))).scalars().all()

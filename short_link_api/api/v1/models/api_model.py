@@ -7,7 +7,7 @@ class UsersBaseModel(BaseModel):
 
 class RequestShortUrlBaseModel(BaseModel):
     origin_url: str
-    user_name: str
+    is_public: bool
 
 
 class ResponseShortUrlBaseModel(BaseModel):
@@ -16,7 +16,6 @@ class ResponseShortUrlBaseModel(BaseModel):
 
 class RequestDeleteUrlBaseModel(BaseModel):
     origin_url: str
-    user_name: str
 
 
 class ResponseDeleteUrlBaseModel(BaseModel):
@@ -25,6 +24,17 @@ class ResponseDeleteUrlBaseModel(BaseModel):
 
 class ResponseFullUrlBaseModel(BaseModel):
     origin_url: str
+
+
+class UserUrl(BaseModel):
+    short_id: str
+    short_url: str
+    origin_url: str
+    is_public: bool
+
+
+class ResponseStatusUrlBaseModel(BaseModel):
+    user_url: list[UserUrl]
 
 
 class VisitsBaseModel(BaseModel):

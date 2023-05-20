@@ -38,5 +38,37 @@ class TestRepositoryBase(unittest.IsolatedAsyncioTestCase):
 
             result = await repository.get_url_by_hash('dafaagadaag')
 
-        self.assertEqual(result.origin_url, 'ya.ru')
         test_database.dispose()
+        self.assertEqual(result.origin_url, 'ya.ru')
+
+    async def test_repository_get_all_url_by_user(self):
+        test_database = TestDatabase()
+
+        values_dict_user = [
+            {'id': 1, 'user_name': 'test_user1'},
+            {'id': 2, 'user_name': 'test_user2'},
+        ]
+
+        values_dict_urls = [
+            {'id': 1, 'origin_url': 'ya.ru', 'hash_url': 'dafaagadaag', 'user_id': 1},
+            {'id': 2, 'origin_url': 'google.ru', 'hash_url': 'faafsdg', 'user_id': 1},
+            {'id': 3, 'origin_url': 'youtube.com', 'hash_url': 'wfarg', 'user_id': 2},
+        ]
+
+        await test_database.create_session()
+
+        async with test_database.get_engine().begin() as conn:
+            await conn.execute(insert(Users).values(values_dict_user))
+            await conn.commit()
+
+        async with test_database.get_engine().begin() as conn:
+            await conn.execute(insert(UrlsPair).values(values_dict_urls))
+            await conn.commit()
+
+        async with await test_database.create_session() as session:
+            repository = UrlsRepository(session)
+
+            result = await repository.get_url_by_user_id(1)
+
+        test_database.dispose()
+        self.assertEqual(len(result), 2)

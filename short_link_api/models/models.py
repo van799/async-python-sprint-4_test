@@ -23,6 +23,7 @@ class UrlsPair(CommonBase):
     origin_url = Column(String, unique=True)
     hash_url = Column(String, unique=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    is_public = Column(Boolean, default=False)
     users = relationship('Users', back_populates='urls_pair')
     visits_id = Column(Integer, ForeignKey('visits.id'), default=None)
     visits = relationship("Visits", backref=backref("urls_pair", uselist=False))
